@@ -52,6 +52,9 @@ const start = () => {
           break;
         case "Remove Employee":
             removeEmployee();
+            break;
+        case "Update Employee Role":
+            updateEmployee();
       }
     });
 };
@@ -184,7 +187,7 @@ const addEmployee = () => {
   });
 };
 
-adding = (x) => {
+const adding = (x) => {
     connection.query(x, (err) => {
         if (err) throw err;
         console.log('New Employee added!')
@@ -252,3 +255,63 @@ const viewManager = () => {
       });
   });
 };
+
+var name = ''
+const updateEmployee = () => {
+    connection.query("SELECT employee.first_name, employee.last_name FROM employee", (err, res) => {
+        if (err) throw err;
+
+        inquirer
+      .prompt([
+        {
+          name: "employee",
+          type: "list",
+          choices() {
+            const choiceArray = [];
+            res.forEach(({ first_name }) => {
+                
+              choiceArray.push(first_name);
+            });
+            return choiceArray;
+          },
+          message: "Select an employee",
+        },
+      ])
+      .then((answer) => {
+          name = answer.employee;
+        connection.query("SELECT * FROM role", (err, res) => {
+            if (err) throw err;
+            inquirer
+          .prompt([
+            {
+              name: "role",
+              type: "list",
+              choices() {
+                const choiceArray = [];
+                res.forEach(({ title }) => {
+                    
+                  choiceArray.push(title);
+                });
+                return choiceArray;
+              },
+              message: "Select a role",
+            },
+          ]).then((answer) => {
+              connection.query(`SELECT id FROM role WHERE role.title = "${answer.role}"`, (err,res) => {
+                req = `UPDATE employee SET role_id = ${res[0].id} WHERE first_name = "${name}"`
+                update(req);
+              })
+          })
+        })
+      });
+    })
+}
+
+
+const update = (x) => {
+    connection.query(x, (err) => {
+        if (err) throw err;
+        console.log('Updated!')
+        viewAll();
+    })
+}
