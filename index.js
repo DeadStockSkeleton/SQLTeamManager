@@ -32,6 +32,8 @@ const start = () => {
         "View All Roles",
         "Add Role",
         "Remove Role",
+        "Add Department",
+        "Remove Departments",
         "View Managers",
         "Add Manager",
         "Remove Manager",
@@ -69,9 +71,63 @@ const start = () => {
         case "Remove Role":
             removeRole();
             break;
+        case "Add Department":
+            addDep();
+            break;
+        case "Remove Department":
+            removeDep();
       }
     });
 };
+
+const removeDep = () => {
+    connection.query("SELECT department.name FROM department", (err, res) => {
+        if (err) throw err;
+    
+        inquirer
+          .prompt([
+            {
+              name: "depName",
+              type: "list",
+              choices() {
+                const choiceArray = [];
+                res.forEach(({ name }) => {
+                  choiceArray.push(name);
+                });
+                return choiceArray;
+              },
+              message: "Select a department",
+            },
+          ]).then((answer) => {
+            connection.query(`DELETE FROM department WHERE department.name = "${answer.depName}"`, (err, res) => {
+                console.log('Department deleted!');
+                viewAll();
+            })
+        })
+      });
+}
+
+const addDep = () => {
+    inquirer.prompt(
+        {
+            name: 'depName',
+            type: 'input',
+            message: "Department name?",
+            validate(value) {
+                if (value.length === 0) {
+                  return false;
+                }
+                return true;
+              },
+
+        }).then((answer) => {
+            connection.query(`INSERT INTO department (name) VALUE ("${answer.depName}")`,(err) => {
+                if (err) throw err
+                console.log("New Departments added");
+                viewAll();
+            })
+        })
+}
 
 const viewAll = () => {
   connection.query(
