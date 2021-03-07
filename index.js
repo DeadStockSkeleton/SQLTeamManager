@@ -37,6 +37,7 @@ const start = () => {
         "View Managers",
         "Add Manager",
         "Remove Manager",
+        "EXIT"
       ],
     })
     .then((answer) => {
@@ -76,9 +77,87 @@ const start = () => {
             break;
         case "Remove Department":
             removeDep();
+            break;
+        case "View Managers":
+            viewMan();
+            break;
+        case "Add Manager":
+            addManager();
+            break;
+        case "Remove Manager":
+            removeManager();
+            break
+        default:
+            connection.end();
+            break;
+
       }
     });
 };
+
+const removeManager = () => {
+    connection.query("SELECT manager.manager FROM manager", (err, res) => {
+        if (err) throw err;
+    
+        inquirer
+          .prompt([
+            {
+              name: "manager",
+              type: "rawlist",
+              choices() {
+                const choiceArray = [];
+                res.forEach(({ manager }) => {
+                  choiceArray.push(manager);
+                });
+                return choiceArray;
+              },
+              message: "Select a Manager",
+            },
+          ])
+          .then((answer) => {
+            console.log(answer.manager);
+            connection.query(
+                `DELETE FROM manager WHERE manager.manager = "${answer.manager}"`,
+              (err, res) => {
+                if (err) throw err
+            console.log("Manager deleted");
+            viewMan();
+              }
+            );
+          });
+      });
+}
+
+const addManager = () => {
+    inquirer.prompt(
+        {
+            name: 'manager',
+            type: 'input',
+            message: "New Manager first name and last name?",
+            validate(value) {
+                if (value.length === 0) {
+                  return false;
+                }
+                return true;
+              },
+
+        }
+    ).then((answer) => {
+        connection.query(`INSERT INTO manager (manager) VALUE ("${answer.manager}")`,(err) => {
+            if (err) throw err
+            console.log("New manager added");
+            viewMan();
+        })
+    })
+}
+
+const viewMan = () => {
+    connection.query("SELECT * FROM manager", (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        start();
+    })
+}
 
 const removeDep = () => {
     connection.query("SELECT department.name FROM department", (err, res) => {
@@ -102,6 +181,7 @@ const removeDep = () => {
             connection.query(`DELETE FROM department WHERE department.name = "${answer.depName}"`, (err, res) => {
                 console.log('Department deleted!');
                 viewAll();
+                
             })
         })
       });
